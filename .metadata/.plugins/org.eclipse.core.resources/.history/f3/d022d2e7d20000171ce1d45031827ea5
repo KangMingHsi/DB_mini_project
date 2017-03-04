@@ -1,0 +1,5 @@
+package ExceptionHandlers;
+
+public class InsertionException extends Exception {
+
+}

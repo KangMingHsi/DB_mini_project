@@ -1,0 +1,5 @@
+package ExceptionHandlers;
+
+public class CreationException extends Exception {
+
+}
