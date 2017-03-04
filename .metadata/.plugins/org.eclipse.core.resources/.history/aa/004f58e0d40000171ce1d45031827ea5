@@ -8,7 +8,7 @@ public class HellowJava {
 		ExceptionTest test = new ExceptionTest();
 		
 		try {
-			test.Test(1);
+			test.Test(0);
 		}catch(Exception e){
 			System.out.println(e.getMessage());
 		}
