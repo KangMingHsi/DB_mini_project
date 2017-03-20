@@ -1,0 +1,50 @@
+package DBMS;
+
+import ExceptionHandlers.InsertionException;
+import ExceptionHandlers.Warning;
+
+/**************************
+ * transfer data, one TransactionData can consider as a dataUnit, with some kind of field and it's own data
+ * when insert, we can input a TransactionData arrayList
+ * 
+ **************************/
+
+// too same as dataunit?
+
+public class TransactionData extends Field {
+	
+	public TransactionData(String name, Table parent) {
+		super(name, parent);
+		// TODO Auto-generated constructor stub
+	}
+	
+	public TransactionData(String name, Type type, String data) throws Warning, InsertionException {
+		super(name, type);
+		if(type.equals(Type.INT)) {
+			this.int_data = Integer.parseInt(data);
+		} else if(type.equals(Type.VARCHAR)) {
+			if(data.length() >= 40) {
+				throw new InsertionException("INPUT STRING TOO LONG FUCK U");
+			} else {
+				this.str_data = data;
+			}
+		}
+	}
+	
+	public TransactionData(String name, int data) throws Warning, InsertionException {
+		super(name, Type.INT);
+		this.int_data = data;
+	}
+	
+	public TransactionData(String name, String data) throws Warning, InsertionException {
+		super(name, Type.VARCHAR);
+		if(data.length() >= 40) {
+			throw new InsertionException("INPUT STRING TOO LONG FUCK U");
+		} else {
+			this.str_data = data;
+		}
+	}
+	
+	public int int_data;
+	public String str_data;
+}

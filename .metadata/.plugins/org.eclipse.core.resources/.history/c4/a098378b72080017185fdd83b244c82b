@@ -1,0 +1,41 @@
+package dbms_project01;
+
+import java.util.*;
+
+public class Main {
+
+	public static void main(String[] args) {
+		
+		parser p = new parser();	
+		ArrayList<SqlCommand> input = p.getCommands();
+		
+		for(SqlCommand s : input){
+			if(s.getActionType() == 1){
+				System.out.println("create table");
+				System.out.println("primary key" + s.getPrimaryKey());
+			}
+			else{
+				System.out.println("insert into");
+				System.out.println("have name: " + s.haveAttributeName());
+			}
+			
+			System.out.println("table: " + s.getTableName());
+			
+			for(Map<String, String> m : s.getAttributes()){
+				
+				for (Map.Entry<String, String> entry : m.entrySet()) {
+					System.out.println(entry.getKey() + ", " + entry.getValue());
+				}
+				
+			}
+			
+			System.out.println("\n****************\n");
+			
+		}
+		
+		/*parser p = new parser();
+		p.getCommands();*/
+		
+	}
+
+}

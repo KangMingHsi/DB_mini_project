@@ -1,0 +1,15 @@
+package dbms_project01;
+
+import java.util.*;
+
+public class Main {
+
+	public static void main(String[] args) {
+		
+		
+		/*parser p = new parser();
+		p.getCommands();*/
+		
+	}
+
+}

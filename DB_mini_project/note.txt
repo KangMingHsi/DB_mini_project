@@ -1,0 +1,6 @@
+bug:
+	-attribute values don't need to be lower case
+undone
+	-comments
+	-read me
+	-error handle

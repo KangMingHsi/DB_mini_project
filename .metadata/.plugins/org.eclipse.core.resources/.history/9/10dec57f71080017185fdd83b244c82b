@@ -1,0 +1,42 @@
+package DBMS;
+
+import DBMS.Field.Type;
+import java.util.Optional;
+
+public class Field {
+	private Table parent;
+	//private Optional<Table> parent;
+	private String name;
+	
+	public static enum Type {
+		INT, VARCHAR, FLOAT, TEXT, NULL
+	}
+	
+	private Type type; 
+	
+	public Field(String name, Table parent) {
+		this.name = name;
+		this.type = Type.NULL;
+		this.parent = parent;
+	}
+	
+	public Field(String name, Table parent, Type type) {
+		this.name = name;
+		this.type = type;
+		this.parent = parent;
+	}
+	
+	public Field(String name, Type type) {
+		this.name = name;
+		this.type = type;
+	}
+	
+	public String getName() {
+		return this.name;
+	}
+	
+	public Type getType() {
+		return this.type;
+	}
+	
+}

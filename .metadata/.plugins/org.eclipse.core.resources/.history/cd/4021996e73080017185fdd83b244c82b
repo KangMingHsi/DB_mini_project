@@ -1,0 +1,120 @@
+
+import java.util.*;
+import DBMS.Database;
+import DBMS.Table;
+import DBMS.TransactionData;
+import ExceptionHandlers.InsertionException;
+import ExceptionHandlers.Warning;
+import Parser.SqlCommand;
+import Parser.parser;
+import DBMS.Field.Type;
+import Test.ExceptionTest;
+import Parser.*;
+
+
+public class Main {
+	
+	public static void main(String[] args) throws Warning, InsertionException {
+		
+		parser p = new parser();	
+		ArrayList<SqlCommand> input = p.getCommands();
+		
+		for(SqlCommand s : input){
+			if(s.getActionType() == 1){
+				System.out.println("create table");
+				System.out.println("primary key" + s.getPrimaryKey());
+			}
+			else{
+				System.out.println("insert into");
+				System.out.println("have name: " + s.haveAttributeName());
+			}
+			
+			System.out.println("table: " + s.getTableName());
+			
+			for(Map<String, String> m : s.getAttributes()){
+				
+				for (Map.Entry<String, String> entry : m.entrySet()) {
+					System.out.println(entry.getKey() + ", " + entry.getValue());
+				}
+				
+			}
+			
+			System.out.println("\n****************\n");
+			
+		}
+		
+//		ExceptionTest t = new ExceptionTest();
+//		try {
+//			t.Test(1);
+//		}catch(Exception e){
+//			System.out.println(e.getMessage());
+//		}
+		Table testTable;
+		ArrayList<TransactionData> TD;
+		ArrayList<String> testTableList;
+		testTableList = new ArrayList<String>();
+		
+		testTableList.add("is87");
+		testTableList.add("isponsh");
+		testTableList.add("id");
+		testTableList.add("age");
+		testTableList.add("name");
+		
+		TD = new ArrayList<TransactionData>();
+		TD.add(new TransactionData("name", Type.VARCHAR, "PPP"));
+		TD.add(new TransactionData("id", Type.INT, "7777777"));
+		TD.add(new TransactionData("age", Type.INT, "26"));
+		TD.add(new TransactionData("isponsh", Type.VARCHAR, "no"));
+		TD.add(new TransactionData("is87", Type.VARCHAR, "yes"));
+		
+		Database database = new Database();
+		
+		database.creat("test");
+		database.getTableByName("test").addTableFieldByString(testTableList, "name");
+		database.getTableByName("test").printTableContent();
+		testTable = database.getTableByName("test");
+		testTable.addTableMember(TD);
+		
+		database.getTableByName("test").printAllRecord();
+		
+		TD.clear();
+		
+		TD.add(new TransactionData("name", Type.VARCHAR, "PONSH"));
+		TD.add(new TransactionData("id", Type.INT, "666666666"));
+		TD.add(new TransactionData("age", Type.INT, "50"));
+		TD.add(new TransactionData("isponsh", Type.VARCHAR, "yes"));
+		// pressure test passed
+		//TD.add(new TransactionData("is87", Type.VARCHAR, "yessssssssssssssssssssssssssssssssssssssssssssssssssssssssssss"));
+		
+		//pressure test failed
+		//TD.add(new TransactionData("is87", Type.VARCHAR, "yesssssssssssssssssssssssssssssssssssss"));
+		TD.add(new TransactionData("is87", Type.VARCHAR, "yes"));
+		
+		testTable.addTableMember(TD);
+		
+		System.out.println("babyrage babyrage babyrage babyrage babyrage babyrage babyrage babyrage babyrage");
+		
+		
+		database.getTableByName("test").printAllRecord();
+		testTable.addTableFieldByString("test", Type.VARCHAR);
+		
+		database.getTableByName("test").printAllRecord();
+		System.out.println(testTable.getRecordByPrimaryKey("PONSH").getData("id").getIntData());
+		//testTable.getRecordByPrimaryKey("PONSH").setData("test", "test");;
+		testTable.updateFieldByField("name", "PONSH", "test", "666");
+		database.getTableByName("test").printAllRecord();
+		
+		testTable.printPrimaryKey();
+		TD.clear();
+		TD.add(new TransactionData("name", Type.VARCHAR, "qwerert"));
+		TD.add(new TransactionData("id", Type.INT, "9487"));
+		TD.add(new TransactionData("age", Type.INT, "52"));
+		TD.add(new TransactionData("isponsh", Type.VARCHAR, "no"));
+		TD.add(new TransactionData("is87", Type.VARCHAR, "no"));
+		TD.add(new TransactionData("test", Type.VARCHAR, "888888"));
+		
+		testTable.addTableMember(TD);
+		database.getTableByName("test").printAllRecord();
+		System.out.println("6666666666666666666666");
+	}
+}

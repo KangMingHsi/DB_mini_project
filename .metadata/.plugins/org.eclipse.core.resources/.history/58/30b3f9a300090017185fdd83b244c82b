@@ -1,0 +1,128 @@
+package DBMS;
+
+import ExceptionHandlers.InsertionException;
+import ExceptionHandlers.Warning;
+
+/**************************
+ * transfer data, one TransactionData can consider as a dataUnit, with some kind of field and it's own data
+ * when insert, we can input a TransactionData arrayList
+ * 
+ **************************/
+
+// too same as dataunit?
+
+/* * * * * * * * * * * * * * * * * * * * * * * 
+ * initial value
+ * a new TransactionData will set 
+ * str_data = ""
+ * int_datq = 0
+ * * * * * * * * * * * * * * * * * * * * * * */
+
+public class TransactionData extends Field {
+	
+	
+	public TransactionData(String name, Table parent) {
+		super(name, parent);
+		this.str_data = "";
+		this.int_data = 0;
+		// TODO Auto-generated constructor stub
+	}
+	
+	public TransactionData(String name, Type type, String data) throws Warning, InsertionException {
+		super(name, type);
+		this.str_data = "";
+		this.int_data = 0;
+		if(type.equals(Type.INT)) {
+
+			this.int_data = Integer.parseInt(data);
+		} else if(type.equals(Type.VARCHAR)) {
+			
+			if(data.length() >= super.getStrLenLimit()) {			//40?
+				throw new InsertionException("INPUT STRING TOO LONG FUCK U");
+			} else {
+				this.str_data = data;
+			}
+		}
+	}
+	
+	public TransactionData(String name, Type type, String data, Table parent) throws Warning, InsertionException {
+		super(name, type);
+		this.str_data = "";
+		this.int_data = 0;
+		for (int i= 0;i < parent.getAttributesList().size(); i++) {				// not a good search
+			if (parent.getAttributesList().get(i).getName().equals(name)) {
+				super.StrLenLimit = parent.getAttributesList().get(i).getStrLenLimit();
+			}
+		}	
+
+		if(type.equals(Type.INT)) {
+			try {
+				this.int_data = Integer.parseInt(data);
+			}
+			catch (Exception e) {
+				this.int_data = 0;
+				System.out.println("INPUT WRONG INTEGER");
+			}
+			
+
+		} else if(type.equals(Type.VARCHAR)) {
+			try {
+				if(data.length() >= super.StrLenLimit) {			//40?
+					throw new InsertionException("INPUT STRING TOO LONG FUCK U");
+				} else {
+					this.str_data = data;
+				}
+			} catch (InsertionException ex) {
+				 System.out.println("INPUT STRING TOO LONG FUCK U");
+			 }
+		}
+	}
+	
+	public TransactionData(String name, int data) throws Warning, InsertionException {
+		super(name, Type.INT);
+		this.str_data = "";
+		
+		this.int_data = data;
+	}
+	
+	public TransactionData(String name, String data, Table parent) throws Warning, InsertionException {
+		super(name, Type.NULL);
+		this.int_data = 0;
+		this.str_data = "";
+		Type type = Type.NULL;
+		for (int i= 0;i < parent.getAttributesList().size(); i++) {				// not a good search
+			if (parent.getAttributesList().get(i).getName().equals(name)) {
+				super.StrLenLimit = parent.getAttributesList().get(i).getStrLenLimit();
+				type = parent.getAttributesList().get(i).getType();
+				System.out.println("" + super.StrLenLimit);
+			}
+		}	
+		
+		if(type.equals(Type.INT)) {
+			super.type = Type.INT;
+			try {
+				this.int_data = Integer.parseInt(data);
+			}
+			catch (Exception e) {
+				this.int_data = 0;
+				System.out.println("INPUT WRONG INTEGER");
+			}
+			
+
+		} else if(type.equals(Type.VARCHAR)) {
+			super.type = Type.VARCHAR;
+			try {
+				if(data.length() >= super.StrLenLimit+1) {			//40?
+					throw new InsertionException("INPUT STRING TOO LONG FUCK U");
+				} else {
+					this.str_data = data;
+				}
+			} catch (InsertionException ex) {
+				 System.out.println("INPUT STRING TOO LONG FUCK U");
+			 }
+		}
+	}
+	
+	public int int_data;
+	public String str_data;
+}

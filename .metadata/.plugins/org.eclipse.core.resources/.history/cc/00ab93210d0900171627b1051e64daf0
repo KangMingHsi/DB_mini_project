@@ -1,0 +1,98 @@
+
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Scanner;
+
+import DBMS.*;
+import DBMS.Field.Type;
+import ExceptionHandlers.InsertionException;
+import ExceptionHandlers.Warning;
+import Parser.*;
+
+public class DBExecuter {
+	
+	public DBExecuter(String path) throws Exception{
+		// for debug
+		Scanner scan = new Scanner(System.in);
+		
+		parser p = new parser();	
+		ArrayList<SqlCommand> input = p.getCommands(path);
+		Database database = new Database();
+		
+		for(SqlCommand s : input){
+			Table table;
+			
+			if(s.getActionType() == 1){
+				
+				ArrayList<Field> tableList = new ArrayList<Field>();
+				table = new Table(s.getTableName(), database);
+				Field.Type type;
+				
+				String data[] = new String[3];
+				for(Map<String, String> m: s.getAttributes())
+				{
+					if(m.get("DataType").compareTo("int") == 0){
+						type = Field.Type.INT;
+					}else{
+						type = Field.Type.VARCHAR;
+					}
+					tableList.add(new Field(m.get("name"), 
+							table, type, Integer.parseInt(m.get("length"))));	
+				}
+				
+				table.addTableFieldByField(tableList, s.getPrimaryKey());
+				
+				table.printTableField();
+				if(!table.errorFlag)
+					database.creat(table);
+				// TODO error handle
+			}
+			else{
+				
+				table = database.getTableByName(s.getTableName());
+				
+				if(s.haveAttributeName())
+				{
+					ArrayList<TransactionData> tableList = new ArrayList<TransactionData>();
+					
+					boolean right = true;
+					for(Map<String, String> m: s.getAttributes())
+					{
+						for(Map.Entry<String, String> entry : m.entrySet())
+						{
+							//System.out.println(entry.getValue() + " : " + entry.getKey());
+							if(right){
+								TransactionData transAction = new TransactionData(entry.getValue(), entry.getKey(), table);
+								if(transAction.createSuccessly){
+									tableList.add(transAction);
+								}else{
+									System.out.println("InGG");
+								}
+								right = transAction.createSuccessly;
+							}
+						}
+						
+					}
+					if(right)
+						table.addTableMember(tableList);
+					else
+						System.out.println("GG");
+				}
+				else
+				{
+					table.addTableMemberByDefault(s.getContent());
+				}
+				
+				// TODO error handle
+				
+				database.getTableByName(s.getTableName()).printAllRecord();
+				scan.nextLine();
+			}
+			
+			
+			
+		}
+		
+	}
+	
+}

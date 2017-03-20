@@ -1,0 +1,214 @@
+package DBMS;
+
+import java.util.*;
+import DBMS.Field.Type;
+
+public class Table {
+	private String tableName;
+	// private Schema schema;
+	private ArrayList<Field> tuple;		//different order with the one in Record?
+	private ArrayList<Record> membersWithOutPrimaryKey;
+	private Hashtable<String, Record> membersWithPrimaryKey;	// problem: primary key may not be string
+	private Field primaryKey;	// can be NULL
+	private boolean havePrimaryKey;
+	private Database parentDatabase;
+
+	public Table(String name, Database parent) {
+		this.tuple = new ArrayList<Field>();
+		this.membersWithOutPrimaryKey = new ArrayList<Record>();
+		this.membersWithPrimaryKey = new Hashtable<String, Record>();
+		this.tableName = name;
+		this.parentDatabase = parent;
+	}
+	
+	public Table(String name, ArrayList<Field> schema, Field primaryKey, Database parent) {
+		this.tuple = schema;
+		this.membersWithOutPrimaryKey = new ArrayList<Record>();
+		this.membersWithPrimaryKey = new Hashtable<String, Record>();
+		this.primaryKey = primaryKey;
+		this.tableName = name;
+		this.parentDatabase = parent;
+
+	}
+	
+	public void printPrimaryKey() {
+		System.out.println(primaryKey.getName());
+	}
+	
+	public void setName(String name) {
+		this.tableName = name;
+	}
+	
+	public void addTableFieldByString(ArrayList<String> schema, String primaryKey)
+	{
+		for(int i = 0; i < schema.size(); i++){
+			
+			this.tuple.add(new Field(schema.get(i), this, Type.VARCHAR));	//dafault??????
+	    }
+		
+		this.primaryKey = new Field(primaryKey, this, Type.VARCHAR);
+		havePrimaryKey = true;
+	}
+	
+	//single field
+	public void addTableFieldByString(String name, Type type)
+	{
+		this.tuple.add(new Field(name, this));
+		for(int i = 0; i < membersWithOutPrimaryKey.size(); i++) {
+			//membersWithOutPrimaryKey.get(i).addField(new Field(name, type));			// need error test 
+			membersWithOutPrimaryKey.get(i).setNewData(name, type, 0, "");
+		}
+	}
+	
+	public void addTableField(ArrayList<Field> schema, Field primaryKey)
+	{
+		for(int i = 0; i < schema.size(); i++) {
+			
+			this.tuple.add(schema.get(i));
+	    }
+		this.primaryKey = primaryKey;
+		this.havePrimaryKey = true;
+	}
+	
+	public void addTableField(ArrayList<Field> schema, String primaryKey)
+	{
+		Type primaryType = Type.NULL;
+		for(int i = 0; i < schema.size(); i++) {
+			
+			this.tuple.add(schema.get(i));
+			if(schema.get(i).getName().equals(primaryKey)) {
+				primaryType = schema.get(i).getType();				// need a not found error handle?
+			}
+	    }
+		this.primaryKey = new Field(primaryKey, this, primaryType);
+		this.havePrimaryKey = true;
+	}
+	
+	
+	public void addTableMember(ArrayList<TransactionData> inputData)
+	{	
+		membersWithOutPrimaryKey.add(new Record(inputData, this));
+		//Record tmp = new Record(inputData, 1);
+		//membersWithOutPrimaryKey.add()
+		if(havePrimaryKey == true) {
+			for(int i = 0; i < inputData.size(); i++){
+				if(inputData.get(i).getName().equals(primaryKey.getName())) {
+					
+					if(primaryKey.getType() == Type.INT) {
+						membersWithPrimaryKey.put(String.valueOf(inputData.get(i).int_data), membersWithOutPrimaryKey.get(membersWithOutPrimaryKey.size() - 1));
+						//System.out.println("test88888888888:" + membersWithPrimaryKey.get(inputData.get(i).str_data).getData("id").getIntData());
+					} else if(primaryKey.getType() == Type.VARCHAR) {
+						membersWithPrimaryKey.put(inputData.get(i).str_data, membersWithOutPrimaryKey.get(membersWithOutPrimaryKey.size() - 1));
+						//System.out.println("test8888888888899:" + membersWithPrimaryKey.get(inputData.get(i).str_data).getData("id").getIntData());
+					} else {
+						//System.out.println("test8888888888877:");
+					}
+					
+				}
+			}
+		}
+
+	}
+	
+	public void updateFieldByField(String withThisField, String withThisValue, String intoThisField, String intoThisValue) {
+		for(int i = 0; i < membersWithOutPrimaryKey.size(); i++) {
+			if(membersWithOutPrimaryKey.get(i).getData(withThisField).getType() == Type.INT) {
+				if(membersWithOutPrimaryKey.get(i).getData(withThisField).getIntData() == Integer.parseInt(withThisValue)) {
+					if(membersWithOutPrimaryKey.get(i).getData(intoThisField).getType() == Type.INT) {
+						membersWithOutPrimaryKey.get(i).getData(intoThisField).setIntData(Integer.parseInt(intoThisValue));
+					} else if(membersWithOutPrimaryKey.get(i).getData(intoThisField).getType() == Type.VARCHAR) {
+						membersWithOutPrimaryKey.get(i).getData(intoThisField).setStrData(intoThisValue);
+					}
+				}
+			} else if(membersWithOutPrimaryKey.get(i).getData(withThisField).getType() == Type.VARCHAR) {
+				if(membersWithOutPrimaryKey.get(i).getData(withThisField).getStrData() == withThisValue) {
+					if(membersWithOutPrimaryKey.get(i).getData(intoThisField).getType() == Type.INT) {
+						membersWithOutPrimaryKey.get(i).getData(intoThisField).setIntData(Integer.parseInt(intoThisValue));
+					} else if(membersWithOutPrimaryKey.get(i).getData(intoThisField).getType() == Type.VARCHAR) {
+						membersWithOutPrimaryKey.get(i).getData(intoThisField).setStrData(intoThisValue);
+					}
+				}
+			}
+			
+		}
+	}
+	
+	public Record getRecordByPrimaryKey(String key) {
+		
+		return membersWithPrimaryKey.get(key);
+		
+	}
+	
+	public ArrayList<Field> getAttributesList() {
+		return this.tuple;
+	}
+	
+	public void printTableField()
+	{
+		System.out.println("Table: " + this.tableName);
+		System.out.print("¢z");
+		for(int i = 0; i < this.tuple.size(); i++) {
+			if(i == this.tuple.size() - 1) {
+				System.out.print("¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢{");
+			} else {
+				System.out.print("¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢s");
+			}
+		}
+		System.out.print("\n");
+		
+		System.out.print("¢x");
+		for(int i = 0; i < this.tuple.size(); i++) {
+			//s[i] = this.fieldList.get(i).getName();
+			System.out.print( String.format("%-10s ¢x", this.tuple.get(i).getName() ));
+		}
+		System.out.print("\n");
+	
+		System.out.print("¢|");
+		for(int i = 0; i < this.tuple.size(); i++) {
+			if(i == this.tuple.size() - 1) {
+				System.out.print("¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢}");
+			} else {
+				System.out.print("¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢r");
+			}
+		}
+		System.out.print("\n");
+	}
+	
+	public void printAllRecord()
+	{
+		System.out.println("Table: " + this.tableName);
+		/* System.out.print("¢z");
+		for(int i = 0; i < this.tuple.size(); i++) {
+			if(i == this.tuple.size() - 1) {
+				System.out.print("¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢{");
+			} else {
+				System.out.print("¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢s");
+			}
+		}
+		System.out.print("\n");
+		*/
+		
+		
+		for(int i = 0; i < membersWithOutPrimaryKey.size(); i++) {
+			if(membersWithOutPrimaryKey.size() == 1) {
+				membersWithOutPrimaryKey.get(i).printRecord(true, true);
+			} else if(i == membersWithOutPrimaryKey.size() - 1) {
+				membersWithOutPrimaryKey.get(i).printRecord(false, true);
+			} else if(i == 0) {
+				membersWithOutPrimaryKey.get(i).printRecord(true, false);
+			} else {
+				membersWithOutPrimaryKey.get(i).printRecord(false, false);
+			}
+		}
+		
+		/*System.out.print("¢|");
+		for(int i = 0; i < this.tuple.size(); i++) {
+			if(i == this.tuple.size() - 1) {
+				System.out.print("¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢}");
+			} else {
+				System.out.print("¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢r");
+			}
+		}
+		System.out.print("\n");*/
+	}
+}

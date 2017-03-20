@@ -1,0 +1,21 @@
+/**
+ * 
+ */
+package Parser;
+
+import java.util.ArrayList;
+import java.util.Map;
+
+public abstract class SqlCommand {
+	
+	abstract int getActionType();// 1: create -1: insert
+	
+	abstract String getTableName();//table name of the action
+	
+	abstract String getPrimaryKey();
+	
+	abstract ArrayList<Map<String, String>> getAttributes();
+	
+	abstract boolean haveAttributeName();
+	
+}

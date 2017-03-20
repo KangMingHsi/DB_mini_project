@@ -1,5 +1,0 @@
-package ExceptionHandlers;
-
-public class Warning extends Exception {
-
-}

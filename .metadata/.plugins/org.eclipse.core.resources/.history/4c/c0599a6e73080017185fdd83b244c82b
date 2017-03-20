@@ -1,0 +1,77 @@
+package Parser;
+
+import java.io.*;
+import Parser.SqlCommand;
+import java.util.*;
+
+public class parser {
+	
+	public ArrayList<SqlCommand> commands = new ArrayList<SqlCommand>();
+	
+	public parser(){
+		
+	}
+	
+	public ArrayList<SqlCommand> getCommands(){
+		try{
+			//read file, put the content into "InputTmp"
+			FileReader fr = new FileReader("Input.txt");
+			BufferedReader br = new BufferedReader(fr);
+			String ch = new String();
+			String InputTmp = new String();
+			while( (ch = br.readLine()) != null ){
+				InputTmp += ch;
+			}
+			
+			// turn "InputTmp" to lowercase
+			//InputTmp = InputTmp.toLowerCase();
+			
+			//split the commands
+			String[] InputCommand = InputTmp.split("\\;");
+			
+			//check which action
+			for (String s : InputCommand){
+				String[] sqlEntry = s.split("\\(", 2);
+				
+				sqlEntry[0] = sqlEntry[0].trim();
+				sqlEntry[1] = sqlEntry[1].trim();
+				sqlEntry[0] = sqlEntry[0].toLowerCase();
+				
+				/*for(String str : sqlEntry){
+					System.out.println(str);
+				}*/
+				
+				String[] sqlAction = sqlEntry[0].split(" +");
+				
+				// See Whether it is insertion or create
+				if(sqlAction[0].equals("create")){
+					
+					sqlEntry[1] = sqlEntry[1].toLowerCase();
+					CreateTable c = new CreateTable(sqlAction[2], sqlEntry[1]);
+					c.parse();
+					commands.add(c);
+					
+				} else{
+					
+					sqlAction[2] = sqlAction[2].replaceAll("(?i)values", "");
+					InsertInto i = new InsertInto(sqlAction[2], sqlEntry[1]);
+					i.parse();
+					commands.add(i);
+					
+				}
+				//System.out.println("action: "+sqlAction[0]);
+				//System.out.println("name: "+sqlAction[2]);
+				
+			}
+			
+			
+			br.close();
+			
+		}catch(IOException e){
+			System.out.println(e);
+		}
+		
+		return commands;
+		
+	}
+}

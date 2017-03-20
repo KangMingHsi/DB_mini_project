@@ -1,0 +1,87 @@
+package Parser;
+import java.util.*;
+
+public class CreateTable extends SqlCommand {
+	
+	public String tableName = new String();
+	public String input = new String();
+	public ArrayList<Map<String, String>> maps = new ArrayList<Map<String, String>>();
+	public String primaryKey = new String();
+	
+	public CreateTable(String name, String s) {
+		tableName = name;	
+		input = s;
+	}
+	
+	public CreateTable(){
+		
+	}
+
+	@Override
+	public int getActionType(){
+		return 1;
+	}
+	
+	public String getTableName(){
+		return tableName;
+	}
+	
+	public ArrayList<Map<String, String>> getAttributes(){
+		return maps;
+	}
+	
+	public String getPrimaryKey(){
+		return primaryKey;
+	}
+	
+	public boolean haveAttributeName(){
+		return false;
+	}
+	
+	public void parse(){
+		
+		String[] datas = input.split("\\,");
+		
+		for(String data : datas){
+			
+			data = data.trim();
+			String[] attributes = data.split(" +|\\(|\\)");
+			List<String> list = new ArrayList<String>(Arrays.asList(attributes));
+			list.removeAll(Arrays.asList("",null));
+			
+			Map<String, String> map = new HashMap<String, String>();
+			map.put("name", list.get(0));
+			map.put("DataType", list.get(1));
+			if(list.get(1).equals("int")){
+				map.put("length", "0");
+				if(list.size()>2){
+					primaryKey = list.get(0);
+				} else{
+					if(primaryKey == null)
+						primaryKey = null;
+				}
+			} else{
+				map.put("length", list.get(2));
+				if(list.size()>3){
+					primaryKey = list.get(0);
+				} else{
+					if(primaryKey == null)
+						primaryKey = null;
+				}
+			}
+			maps.add(map);
+			
+		}
+		/*for(Map<String, String> m : maps ){
+			for (Map.Entry<String, String> entry : m.entrySet()) {
+				System.out.println(entry.getKey() + ", " + entry.getValue());
+			}
+			System.out.println("--------");
+		}
+		
+		System.out.println(primaryKey);
+		System.out.println("*********");*/
+		
+	}
+
+}
