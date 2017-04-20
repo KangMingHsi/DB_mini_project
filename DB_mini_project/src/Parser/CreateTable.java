@@ -8,10 +8,17 @@ public class CreateTable extends SqlCommand {
 	public ArrayList<Map<String, String>> maps = new ArrayList<Map<String, String>>();
 	public String primaryKey = new String();
 	public ArrayList<String> content = new ArrayList<String>();
+	public ErrorType error;
 	
 	public CreateTable(String name, String s) {
 		tableName = name;	
 		input = s;
+	}
+	
+	public CreateTable(ErrorType err){
+		
+		error = err;
+		
 	}
 	
 	public CreateTable(){
@@ -19,8 +26,8 @@ public class CreateTable extends SqlCommand {
 	}
 
 	@Override
-	public int getActionType(){
-		return 1;
+	public ActionType getActionType(){
+		return ActionType.CreateTable;
 	}
 	
 	public String getTableName(){
@@ -43,7 +50,9 @@ public class CreateTable extends SqlCommand {
 		return content;
 	}
 	
-	public boolean parse(){
+	boolean parse(ErrorType er){
+		
+		error = er;
 		
 		String[] datas = input.split("\\,");
 		
@@ -109,6 +118,7 @@ public class CreateTable extends SqlCommand {
 				}
 			}else{
 				System.out.println("Syntax error, unknown type '" + list.get(1) + "'");
+				error = ErrorType.UnKnownType;
 				return false;
 			}
 			maps.add(map);
@@ -121,6 +131,42 @@ public class CreateTable extends SqlCommand {
 		
 		return true; 
 		
+	}
+
+	@Override
+	public ArrayList<Map<String, String>> getNickName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean isSelectAll() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public ActionType getAggreFunc() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String[] getCompareTree() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String[] getSelectAttr() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ErrorType getError() {
+		// TODO Auto-generated method stub
+		return error;
 	}
 
 }

@@ -17,7 +17,7 @@ public class Main {
 	public static void main(String[] args) throws Warning, InsertionException {
 		try
 		{
-			DBExecuter dbExecuter = new DBExecuter("Input.txt");
+			DBExecuter dbExecuter = new DBExecuter("author.sql");
 		}
 		catch(Exception e)
 		{

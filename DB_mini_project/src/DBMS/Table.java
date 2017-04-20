@@ -12,15 +12,17 @@ import ExceptionHandlers.Warning;
 
 public class Table {
 	private String tableName;
-	// private Schema schema;
-	private ArrayList<Field> tuple;		//different order with the one in Record?
+	private ArrayList<Field> tuple;
+	private Hashtable<String, Integer> attributeIndex;
 	private ArrayList<Record> membersWithOutPrimaryKey;
-	private Hashtable<String, Record> membersWithPrimaryKey;	// problem: primary key may not be string
-	private Field primaryKey;	// can be NULL
+	private Hashtable<String, Record> membersWithPrimaryKey;
+	//private Hashtable<String, ArrayList<Record>> attributeContent;
+	private Field primaryKey;
 	private boolean havePrimaryKey;
 	private Database parentDatabase;
 	private HashMap<String, Integer> longestValueLength;
-	public boolean errorFlag;
+	public boolean errorFlag, isInnerJoin;
+	private boolean isTmpTable;
 	
 	
 	/*Table Constructor*/
@@ -34,6 +36,10 @@ public class Table {
 		this.parentDatabase = parent;
 		this.longestValueLength = new HashMap<String, Integer>();
 		this.havePrimaryKey = false;
+		this.attributeIndex = new Hashtable<String, Integer>();
+		this.isTmpTable = false;
+		this.isInnerJoin = false;
+		//this.attributeContent = new Hashtable<String, ArrayList<Record>>();
 	}
 	
 	public Table(String name, ArrayList<Field> schema, Field primaryKey, Database parent) {
@@ -45,6 +51,10 @@ public class Table {
 		this.parentDatabase = parent;
 		this.longestValueLength = new HashMap<String, Integer>();
 		this.havePrimaryKey = false;
+		this.attributeIndex = new Hashtable<String, Integer>();
+		this.isTmpTable = false;
+		this.isInnerJoin = false;
+		//this.attributeContent = new Hashtable<String, ArrayList<Record>>();
 	}
 	
 	/*************************************************************************/
@@ -65,8 +75,69 @@ public class Table {
 		return this.tuple;
 	}
 	
+	public ArrayList<Record> getRecordList() {
+		return this.membersWithOutPrimaryKey;
+	}
+	
 	public void printPrimaryKey() {
 		System.out.println(primaryKey.getName());
+	}
+	
+	public void setPrimary(boolean b) {
+		this.havePrimaryKey = b;
+	}
+	
+	public void setisTmpTable(boolean b) {
+		this.isTmpTable = b;
+	}
+	
+	public void printPrimary() {
+		System.out.println(this.havePrimaryKey);
+	}
+	
+	public void emptyMember() {
+		membersWithOutPrimaryKey.clear();
+	}
+	
+	public ArrayList<String> getStringAttributeList() {
+		ArrayList<String> tmpStr = new ArrayList<String>();
+		for (int i = 0; i < this.tuple.size(); i++) {
+			tmpStr.add(tuple.get(i).getName());
+		}
+		return tmpStr;
+	}
+	
+	public Integer getAttributeIndex(String name) {
+		if (this.attributeIndex.containsKey(name) == true) {
+			return this.attributeIndex.get(name);
+		} else {
+			return null;
+		}
+	}
+	
+	public Table getAttributeColumn(String attr) throws Warning, InsertionException {
+		Table tmpTable = new Table("tmpTable", this.parentDatabase);
+		tmpTable.setisTmpTable(true);
+		Field tmpField = this.getAttributesList().get(this.getAttributeIndex(attr));
+		tmpTable.addTableFieldByString(tmpField.getName(), tmpField.getType(), tmpField.getStrLenLimit());
+		ArrayList<String> tmpString = new ArrayList<String>();
+		for (int i = 0; i < this.getRecordList().size(); i++) {
+			tmpString.clear();
+			if (this.getRecordList().get(i).getData(attr).getType() == Type.INT) {
+				//System.out.println(String.valueOf(this.getRecordList().get(i).getData(attr).getIntData()));
+				tmpString.add(String.valueOf(this.getRecordList().get(i).getData(attr).getIntData()));
+				tmpTable.addTableMemberByDefault(tmpString);
+			} else if (this.getRecordList().get(i).getData(attr).getType() == Type.VARCHAR) {
+				tmpString.add(this.getRecordList().get(i).getData(attr).getStrData());
+				tmpTable.addTableMemberByDefault(tmpString);
+			} else if (this.getRecordList().get(i).getData(attr).getType() == Type.NULL) {
+				//????????
+			}
+		}
+		
+		System.out.println(tmpTable.getRecordList().size());
+		
+		return tmpTable;
 	}
 	
 	/*Input Interface for field*/
@@ -80,10 +151,12 @@ public class Table {
 		for(int i = 0; i < schema.size(); i++) {
 			
 			this.tuple.add(schema.get(i));
+			this.attributeIndex.put(schema.get(i).getName(), i);
 			if(schema.get(i).getName().equals(primaryKey)) {
 				primaryType = schema.get(i).getType();				// need a not found error handle?
 			}
-			this.longestValueLength.put(schema.get(i).getName(), 0);
+			//this.longestValueLength.put(schema.get(i).getName(), 0);
+			this.longestValueLength.put(schema.get(i).getName(), schema.get(i).getName().length());
 	    }
 		this.primaryKey = new Field(primaryKey, this, primaryType);
 		this.havePrimaryKey = true;
@@ -96,7 +169,9 @@ public class Table {
 		for(int i = 0; i < schema.size(); i++) {
 			
 			this.tuple.add(schema.get(i));
-			this.longestValueLength.put(schema.get(i).getName(), 0);
+			this.attributeIndex.put(schema.get(i).getName(), this.tuple.size());
+			//this.longestValueLength.put(schema.get(i).getName(), 0);
+			this.longestValueLength.put(schema.get(i).getName(), schema.get(i).getName().length());
 	    }
 		this.primaryKey = primaryKey;
 		this.havePrimaryKey = true;
@@ -125,8 +200,10 @@ public class Table {
 			
 			if(attributeType.get(i).equals("INT")) {
 				this.tuple.add(new Field(attributeName.get(i), this, Type.INT, 0));
+				this.attributeIndex.put(attributeName.get(i), this.tuple.size()-1);
 			} else if(attributeType.get(i).equals("VARCHAR")) {
 				this.tuple.add(new Field(attributeName.get(i), this, Type.VARCHAR, 40));
+				this.attributeIndex.put(attributeName.get(i), this.tuple.size()-1);
 			} else {
 				System.out.println("INSERT TYPE NOT ALLOW");
 			}
@@ -140,22 +217,26 @@ public class Table {
 	public void addTableFieldByString(String name, Type type)
 	{
 		this.tuple.add(new Field(name, this, type));
+		this.attributeIndex.put(name, this.tuple.size()-1);
 		for(int i = 0; i < membersWithOutPrimaryKey.size(); i++) {
 			//membersWithOutPrimaryKey.get(i).addField(new Field(name, type));			// need error test 
 			membersWithOutPrimaryKey.get(i).setNewData(name, type, 0, "");
 		}
-		this.longestValueLength.put(name, 0);
+		//this.longestValueLength.put(name, 0);
+		this.longestValueLength.put(name, name.length());
 	}
 	
 	/*single attribute, by string with LenLimit*/
 	public void addTableFieldByString(String name, Type type, int lenLimit)
 	{
 		this.tuple.add(new Field(name, this, type, lenLimit));
+		this.attributeIndex.put(name, this.tuple.size()-1);
 		for(int i = 0; i < membersWithOutPrimaryKey.size(); i++) {
 			//membersWithOutPrimaryKey.get(i).addField(new Field(name, type));			// need error test 
 			membersWithOutPrimaryKey.get(i).setNewData(name, type, 0, "");
 		}
-		this.longestValueLength.put(name, 0);
+		//this.longestValueLength.put(name, 0);
+		this.longestValueLength.put(name, name.length());
 	}
 	
 	/*multiple attribute, by field, without primary key*/
@@ -164,6 +245,8 @@ public class Table {
 		for(int i = 0; i < schema.size(); i++) {
 			
 			this.tuple.add(schema.get(i));
+			
+			this.attributeIndex.put(schema.get(i).getName(), this.tuple.size()-1);
 			this.longestValueLength.put(schema.get(i).getName(), 0);
 	    }
 	}
@@ -178,8 +261,10 @@ public class Table {
 		for(int i = 0; i < attributeName.size(); i++){
 			if(attributeType.get(i).equals("INT")) {
 				this.tuple.add(new Field(attributeName.get(i), this, Type.INT, 0));
+				this.attributeIndex.put(attributeName.get(i), this.tuple.size()-1);
 			} else if(attributeType.get(i).equals("VARCHAR")) {
 				this.tuple.add(new Field(attributeName.get(i), this, Type.VARCHAR, 40));
+				this.attributeIndex.put(attributeName.get(i), this.tuple.size()-1);
 			} else {
 				System.out.println("INSERT TYPE NOT ALLOW");
 			}
@@ -243,6 +328,7 @@ public class Table {
 			}
 			
 		}
+		//System.out.println("77777777"+this.isTmpTable);
 		return this.addTableMember(tmp);
 	}
 	
@@ -255,9 +341,11 @@ public class Table {
 		boolean finder = false;
 		for(int i = 0; i < inputName.size(); i++) {
 			finder = false;
+			//System.out.println(inputName.get(i));
 			for (int j= 0; j < this.tuple.size(); j++) {	
 				if (inputName.get(i).equals(this.tuple.get(j).getName())) {
 					finder = true;
+					break;
 				}
 				
 			}
@@ -330,8 +418,9 @@ public class Table {
 		
 		Record newRecord = new Record(inputData, this);
 		
-		if(this.havePrimaryKey == false) {
+		if(this.havePrimaryKey == false && this.isTmpTable == false) {
 			boolean checkSame = true;
+			//this.membersWithOutPrimaryKey.size()
 			for(int i = 0; i < this.membersWithOutPrimaryKey.size(); i++) {
 				//System.out.println(i);
 				//System.out.println(this.membersWithOutPrimaryKey.get(i).getData("name").getStrData());
@@ -341,14 +430,14 @@ public class Table {
 						//System.out.println(newRecord.getData(this.tuple.get(j).getName()).getIntData() + " " + membersWithOutPrimaryKey.get(i).getData(this.tuple.get(j).getName()).getIntData());
 						if(newRecord.getData(this.tuple.get(j).getName()).getIntData() != membersWithOutPrimaryKey.get(i).getData(this.tuple.get(j).getName()).getIntData()) {
 							checkSame = false;
-							continue;
+							break;
 						}
 						
 					} else if(this.tuple.get(j).getType() == Type.VARCHAR) {
 						//System.out.println(newRecord.getData(this.tuple.get(j).getName()).getStrData() + " " + membersWithOutPrimaryKey.get(i).getData(this.tuple.get(j).getName()).getStrData());
-						if(newRecord.getData(this.tuple.get(j).getName()).getStrData().compareTo(membersWithOutPrimaryKey.get(i).getData(this.tuple.get(j).getName()).getStrData()) != 0) {
+						if(newRecord.getData(this.tuple.get(j).getName()).getStrData() != membersWithOutPrimaryKey.get(i).getData(this.tuple.get(j).getName()).getStrData()) {
 							checkSame = false;
-							continue;
+							break;
 						}
 					}
 					else {
@@ -359,11 +448,10 @@ public class Table {
 					break;
 				}
 			}
-			if(checkSame == true && membersWithOutPrimaryKey.size() > 0) {
+			if(checkSame == true && this.membersWithOutPrimaryKey.size() > 0) {
 				System.out.println("SAME RECORD WITH NO PRIMARY KEY");
 				return false;
 			}
-			
 		}
 		
 		//membersWithOutPrimaryKey.add(new Record(inputData, this));
@@ -417,6 +505,7 @@ public class Table {
 		return true;
 
 	}
+	
 	// a powerful function to update ob' 'ov
 	public void updateFieldByField(String withThisField, String withThisValue, String intoThisField, String intoThisValue) {
 		
@@ -475,30 +564,74 @@ public class Table {
 	
 	public void printTableField()
 	{
+		int rowLen;
 		System.out.println("Table: " + this.tableName);
 		System.out.print("|-");
 		for(int i = 0; i < this.tuple.size(); i++) {
-			if(i == this.tuple.size() - 1) {
-				System.out.print("----------------------{");
+			if(longestValueLength.get(this.tuple.get(i).getName()) < 11) {				//judge onle once?
+				rowLen = 11;
+			} else if (longestValueLength.get(this.tuple.get(i).getName()) < 21) {
+				rowLen = 21;
+			} else if (longestValueLength.get(this.tuple.get(i).getName()) < 31) {
+				rowLen = 31;
+			} else if (longestValueLength.get(this.tuple.get(i).getName()) < 41) {
+				rowLen = 41;
 			} else {
-				System.out.print("-----------------------");
+				rowLen = 87;
+				System.out.println("ERROR");  	// error handleing
+			}
+			
+			for(int j = 0; j < rowLen; j++) {
+				System.out.print("--");
+			}
+			if(i == this.tuple.size() - 1) {
+				System.out.print("--");
+			} else {
+				System.out.print("--");
 			}
 		}
 		System.out.print("\n");
 		
+		
 		System.out.print("||");
 		for(int i = 0; i < this.tuple.size(); i++) {
 			//s[i] = this.fieldList.get(i).getName();
-			System.out.print( String.format("%-10s ||", this.tuple.get(i).getName() ));
+			if(longestValueLength.get(this.tuple.get(i).getName()) < 11) {
+				System.out.print( String.format("%-10s ||", this.tuple.get(i).getName() ));
+			} else if (longestValueLength.get(this.tuple.get(i).getName()) < 21) {
+				System.out.print( String.format("%-20s ||", this.tuple.get(i).getName() ));
+			} else if (longestValueLength.get(this.tuple.get(i).getName()) < 31) {
+				System.out.print( String.format("%-30s ||", this.tuple.get(i).getName() ));
+			} else if (longestValueLength.get(this.tuple.get(i).getName()) < 41) {
+				System.out.print( String.format("%-40s ||", this.tuple.get(i).getName() ));
+			} else {
+				System.out.println("ERROR");  	// error handleing
+			}
+			
 		}
 		System.out.print("\n");
-	
 		System.out.print("|-");
 		for(int i = 0; i < this.tuple.size(); i++) {
-			if(i == this.tuple.size() - 1) {
-				System.out.print("----------------------}");
+			if(longestValueLength.get(this.tuple.get(i).getName()) < 11) {				//judge onle once?
+				rowLen = 11;
+			} else if (longestValueLength.get(this.tuple.get(i).getName()) < 21) {
+				rowLen = 21;
+			} else if (longestValueLength.get(this.tuple.get(i).getName()) < 31) {
+				rowLen = 31;
+			} else if (longestValueLength.get(this.tuple.get(i).getName()) < 41) {
+				rowLen = 41;
 			} else {
-				System.out.print("-----------------------");
+				rowLen = 87;
+				System.out.println("ERROR");  	// error handleing
+			}
+			
+			for(int j = 0; j < rowLen; j++) {
+				System.out.print("--");
+			}
+			if(i == this.tuple.size() - 1) {
+				System.out.print("--");
+			} else {
+				System.out.print("--");
 			}
 		}
 		System.out.print("\n");
@@ -520,6 +653,78 @@ public class Table {
 			}
 		}
 		
+	}
+	
+	public Table SelectRecord(ArrayList<String> selectArribute) throws Warning, InsertionException
+	{
+		ArrayList<String> tmpList = (ArrayList<String>)(selectArribute.clone());
+		selectArribute.clear();
+		if(this.getStringAttributeList().get(0).contains(".")){
+			if(!tmpList.get(0).contains(".")){
+				for(String s : tmpList){
+					selectArribute.add(this.tableName + "." + s);
+				}
+			}else{
+				selectArribute = tmpList;
+			}
+		}else{
+			if(tmpList.get(0).contains(".")){
+				for(String s : tmpList){
+					selectArribute.add(s.split("\\.")[1]);
+				}
+			}else{
+				selectArribute = tmpList;
+			}
+		}
+		//System.out.println("Table: " + this.tableName);
+		
+		if(selectArribute.size() == 1 && selectArribute.get(0).equals("*")) {
+			/*selectArribute.clear();
+			for(int i = 0; i < tuple.size(); i++) {
+				selectArribute.add(tuple.get(i).getName());
+			}*/
+			return this;
+		}
+		
+		Table tmpTable = new Table("tmpTable", this.parentDatabase);
+		tmpTable.setisTmpTable(true);
+		
+		for (int i = 0; i < selectArribute.size(); i++) {
+			Field tmp = tuple.get(this.attributeIndex.get(selectArribute.get(i)));
+			tmpTable.addTableFieldByString(tmp.getName(), tmp.getType(), tmp.getStrLenLimit());
+		}
+		ArrayList<String> inputData = new ArrayList<String>();
+		DataUnit tmpData;
+		for (int i = 0; i < membersWithOutPrimaryKey.size(); i++) {
+			
+			inputData.clear();
+			for (int j = 0; j < selectArribute.size(); j++) {
+				
+				tmpData = membersWithOutPrimaryKey.get(i).getData(selectArribute.get(j));
+				if (tmpData.getType() == Type.INT) {
+					inputData.add(String.valueOf(tmpData.getIntData()));
+				} else if (tmpData.getType() == Type.VARCHAR) {
+					inputData.add(tmpData.getStrData());
+				} else if (tmpData.getType() == Type.NULL) {
+					System.out.println("6666666666");
+				}
+			}
+			
+			tmpTable.addTableMemberByString(selectArribute, inputData);
+		}
+		
+		//tmpTable.printAllRecord();
+		return tmpTable;
+		
+	}
+	
+	public Table WhereLimit(Table T1, ArrayList<String> condition) {
+		Table tmpTable = new Table("tmpTable", this.parentDatabase);
+		tmpTable.setisTmpTable(true);
+		
+		
+		
+		return tmpTable;
 	}
 	
 	/*************************************************************************/

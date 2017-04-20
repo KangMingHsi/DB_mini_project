@@ -9,10 +9,15 @@ public class InsertInto extends SqlCommand {
 	public boolean attributeName;
 	public Map<String, String> attributes = new HashMap<String, String>();
 	ArrayList<String> names = new ArrayList<String>();
+	public ErrorType error;
 	
 	public InsertInto(String name, String s) {
 		tableName = name;
 		input = s;
+	}
+	
+	public InsertInto(ErrorType err){
+		error = err;
 	}
 	
 	public InsertInto(){
@@ -27,8 +32,8 @@ public class InsertInto extends SqlCommand {
 	}
 
 	@Override
-	public int getActionType() {
-		return -1;
+	public ActionType getActionType() {
+		return ActionType.InsertInto;
 	}
 
 	@Override
@@ -46,8 +51,9 @@ public class InsertInto extends SqlCommand {
 		return list;
 	}
 	
-	public void parse(){
+	public void parse(ErrorType er){
 		
+		error = er;
 		//System.out.println(input);
 		
 			String[] data = input.split("\\(");
@@ -89,6 +95,42 @@ public class InsertInto extends SqlCommand {
 				}
 				
 			}
+	}
+
+	@Override
+	public ArrayList<Map<String, String>> getNickName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean isSelectAll() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public ActionType getAggreFunc() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String[] getCompareTree() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String[] getSelectAttr() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ErrorType getError() {
+		// TODO Auto-generated method stub
+		return error;
 	}
 
 }
